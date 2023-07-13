@@ -51,7 +51,7 @@ After the modeling part the model is deployed using Streamlit library on Streaml
 
 ## Link To My Web Application -
 
-https://share.streamlit.io/bhaswatiroy/complete-text-analysis-streamlit-web-app/main/app.py
+https://sanchari-text-miner.streamlit.app/
 
 ## Glance At The Hosted Application- 
 
