@@ -1,5 +1,5 @@
 <h1 align="center">
-             Complete Text Analysis Web App 💬 📝 ✍️
+             Streamlit Text Miner 💬 📝 ✍️
 </h1>
 
 ![image](https://user-images.githubusercontent.com/78029145/154792740-dadca757-5424-4e4c-af69-fc3a5055af3b.png)
@@ -19,11 +19,21 @@ The analysis sections include ->
 
 ## Tech Stacks Used
 
-<img src="https://img.shields.io/badge/python%20-%2314354C.svg?&style=for-the-badge&logo=python&logoColor=white"/>
+* Python
 
 ## Libraries Used
 
-<img src="https://img.shields.io/badge/numpy%20-%2314354C.svg?&style=for-the-badge&logo=numpy&logoColor=white"/> <img src="https://img.shields.io/badge/pandas%20-%2314354C.svg?&style=for-the-badge&logo=pandas&logoColor=white"/> <img src="https://img.shields.io/badge/streamlit%20-%2314354C.svg?&style=for-the-badge&logo=streamlit&logoColor=white"/> <img src="https://img.shields.io/badge/nltk%20-%2314354C.svg?&style=for-the-badge&logo=nltk&logoColor=white"/> <img src="https://img.shields.io/badge/scikitlearn%20-%2314354C.svg?&style=for-the-badge&logo=scikitlearn&logoColor=white"/>
+* Numpy
+
+* Pandas
+
+* Streamlit
+
+* NLTK
+
+* Scikit Learn
+
+
 
 ## Structure Of The Project
 
