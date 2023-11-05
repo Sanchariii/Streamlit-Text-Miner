@@ -69,8 +69,6 @@ def predictHate(text):
 def predictSarcasm(text):
     cv = joblib.load("./models/cvsarcasm.pkl")
     text = cleanText(text)
-    input_seq = tokenizer.texts_to_sequences([text])
-    pad_seq = pad_sequences(input_seq, maxlen=100, padding='post')
     pred = model.predict(pad_seq)
     pred = np.round(pred).astype(int)
     return pred[0][0]
