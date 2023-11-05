@@ -68,7 +68,7 @@ def predict(
     input_seq = tokenizer.texts_to_sequences([text])
     pad_seq = pad_sequences(input_seq, maxlen=100, padding='post')
     pred = model.predict(pad_seq)
-    pred = np.argmax(pred)
+    pred = np.round(pred).astype(int)
     return pred
 
 rad=st.sidebar.radio("Navigation",["Home","Spam or Ham Detection","Sentiment Analysis","Stress Detection","Hate and Offensive Content Detection","Sarcasm Detection"])
