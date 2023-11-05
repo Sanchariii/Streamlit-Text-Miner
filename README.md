@@ -29,10 +29,9 @@ The analysis sections include ->
 
 * Streamlit
 
-* NLTK
-
 * Scikit Learn
 
+* Tensorflow
 
 
 ## Structure Of The Project
