@@ -54,8 +54,8 @@ def predictStress(text):
     model = load_model("./models/stressDetection.h5")
     text = cv.transform([text])
     pred = model.predict(text)
-    pred = np.argmax(pred)
-    return pred
+    pred = np.round(pred).astype(int)
+    return pred[0][0]
 
 def predictHate(text):
     cv = joblib.load("./models/cvhate.pkl")
@@ -73,7 +73,7 @@ def predictSarcasm(text):
     pad_seq = pad_sequences(input_seq, maxlen=100, padding='post')
     pred = model.predict(pad_seq)
     pred = np.round(pred).astype(int)
-    return pred
+    return pred[0][0]
 
 
 rad=st.sidebar.radio("Navigation",["Home","Spam or Ham Detection","Sentiment Analysis","Stress Detection","Hate and Offensive Content Detection","Sarcasm Detection"])
