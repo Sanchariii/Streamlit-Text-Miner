@@ -69,6 +69,7 @@ def predictHate(text):
 def predictSarcasm(text):
     cv = joblib.load("./models/cvsarcasm.pkl")
     text = cleanText(text)
+    model = load_model("./models/sarcasmDetection.h5")
     pred = model.predict(pad_seq)
     pred = np.round(pred).astype(int)
     return pred[0][0]
