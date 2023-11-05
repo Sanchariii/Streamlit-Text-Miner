@@ -1,14 +1,11 @@
-import streamlit as st
-import numpy as np
-import tensorflow as tf
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.models import load_model
 import re
 import os
+import joblib
+import numpy as np
+import streamlit as st
+from tensorflow.keras.models import load_model
 from sklearn.feature_extraction.text import CountVectorizer
 
-import joblib
 
 
 def cleanText(text: str) -> str:
