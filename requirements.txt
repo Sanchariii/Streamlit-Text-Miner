@@ -4,3 +4,5 @@ pandas
 streamlit
 tensorflow
 scikit-learn
+joblib
+pickle
