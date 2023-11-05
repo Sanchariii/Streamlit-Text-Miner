@@ -1,11 +1,12 @@
-import streamlit as st
-import numpy as np
-import tensorflow as tf
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.models import load_model
 import re
 import os
+import joblib
+import numpy as np
+import streamlit as st
+from tensorflow.keras.models import load_model
+from sklearn.feature_extraction.text import CountVectorizer
+
+
 
 def cleanText(text: str) -> str:
     """
@@ -23,53 +24,54 @@ def cleanText(text: str) -> str:
     text = text.strip()
     return text
 
-models_directory = "./models"
-models = os.listdir(models_directory)
 
-model_mapping = {
-    "spam": None,
-    "sentiment": None,
-    "stress": None,
-    "hate": None,
-    "sarcasm": None
-}
 
-for keyword, model_var in model_mapping.items():
-    for model_name in models:
-        if keyword in model_name.lower():
-            model_mapping[keyword] = load_model(os.path.join(models_directory, model_name))
-            break  
-
-spam_model = model_mapping["spam"]
-sentiment_model = model_mapping["sentiment"]
-stress_model = model_mapping["stress"]
-hate_model = model_mapping["hate"]
-sarcasm_model = model_mapping["sarcasm"]
-
-tokenizer = Tokenizer(num_words=10000, split=' ')
-
-def predict(
-        text : str,
-        tokenizer : object,
-        model : object,
-        ) -> int:
-    """
-    This function predicts the class of the text.
-
-    Args:
-        text (str): The text to be predicted.
-        tokenizer (object): The tokenizer object.
-        model (object): The model object.
-
-    Returns:
-        int: The predicted class.
-    """
+def predictSpamHam(text):
+    cv = joblib.load("./models/cv.pkl")
     text = cleanText(text)
-    input_seq = tokenizer.texts_to_sequences([text])
-    pad_seq = pad_sequences(input_seq, maxlen=100, padding='post')
-    pred = model.predict(pad_seq)
+    model = load_model("./models/spamDetection.h5")
+    text = cv.transform([text])  
+    pred = model.predict(text)
+    pred = np.round(pred).astype(int)
+    return pred[0][0]
+
+
+def predictSentiment(text):
+    cv = joblib.load("./models/cvsentiment.pkl")
+    text = cleanText(text)
+    model = load_model("./models/sentimentDetection.h5")
+    text = cv.transform([text])
+    pred = model.predict(text)
+    pred = np.round(pred).astype(int)
+    return pred[0][0]
+    
+def predictStress(text):
+    cv = joblib.load("./models/cvstress.pkl")
+    text = cleanText(text)
+    model = load_model("./models/stressDetection.h5")
+    text = cv.transform([text])
+    pred = model.predict(text)
+    pred = np.round(pred).astype(int)
+    return pred[0][0]
+
+def predictHate(text):
+    cv = joblib.load("./models/cvhate.pkl")
+    text = cleanText(text)
+    model = load_model("./models/hateDetection.h5")
+    text = cv.transform([text])
+    pred = model.predict(text)
     pred = np.argmax(pred)
     return pred
+
+def predictSarcasm(text):
+    cv = joblib.load("./models/cvsarcasm.pkl")
+    text = cleanText(text)
+    model = load_model("./models/sarcasmDetection.h5")
+    text = cv.transform([text])
+    pred = model.predict(text)
+    pred = np.round(pred).astype(int)
+    return pred[0][0]
+
 
 rad=st.sidebar.radio("Navigation",["Home","Spam or Ham Detection","Sentiment Analysis","Stress Detection","Hate and Offensive Content Detection","Sarcasm Detection"])
 
@@ -85,6 +87,7 @@ if rad=="Home":
     st.text("4. Hate and Offensive Content Detection")
     st.text("5. Sarcasm Detection")
 
+
 if rad=="Spam or Ham Detection":
     st.header("Detect Whether A Text Is Spam Or Ham??")
 
@@ -96,11 +99,12 @@ if rad=="Spam or Ham Detection":
             st.warning("Please Enter A Text Of Atleast 50 Characters")
 
         else:
-            pred=predict(text,tokenizer,spam_model)
-            if pred==1:
-                st.write("The Text Is Spam")
-            else:
+            pred=predictSpamHam(text)
+            if pred==0:
                 st.write("The Text Is Ham")
+            else:
+                st.write("The Text Is Spam")
+
 
 if rad=="Sentiment Analysis":
     st.header("Detect The Sentiment Of A Text??")
@@ -113,11 +117,11 @@ if rad=="Sentiment Analysis":
             st.warning("Please Enter A Text Of Atleast 50 Characters")
 
         else:
-            pred=predict(text,tokenizer,sentiment_model)
+            pred=predictSentiment(text)
             if pred==0:
-                st.write("The Text Is Negative")
+                st.write("The Sentiment Of The Text Is Negative")
             else:
-                st.write("The Text Is Positive")
+                st.write("The Sentiment Of The Text Is Positive")
 
 if rad=="Stress Detection":
     st.header("Detect Whether A Text Is Stressed Or Not??")
@@ -130,11 +134,12 @@ if rad=="Stress Detection":
             st.warning("Please Enter A Text Of Atleast 50 Characters")
 
         else:
-            pred=predict(text,tokenizer,stress_model)
+            pred=predictStress(text)
             if pred==0:
                 st.write("The Text Is Not Stressed")
             else:
                 st.write("The Text Is Stressed")
+
 
 if rad=="Hate and Offensive Content Detection":
     st.header("Detect Whether A Text Is Hate and Offensive Content Or Not??")
@@ -147,13 +152,13 @@ if rad=="Hate and Offensive Content Detection":
             st.warning("Please Enter A Text Of Atleast 50 Characters")
 
         else:
-            pred=predict(text,tokenizer,hate_model)
+            pred=predictHate(text)
             if pred==0:
-                st.write("The Text Is Highly Offensive")
+                st.write("The Text Is Hate and Offensive Content")
             elif pred==1:
-                st.write("The Text Is Offensive")
+                st.write("The Text Is hatefull")
             else:
-                st.write("The Text Is Not Offensive")
+                st.write("The Text Is not hatefull and offensive")
 
 if rad=="Sarcasm Detection":
     st.header("Detect Whether A Text Is Sarcasm Or Not??")
@@ -166,7 +171,7 @@ if rad=="Sarcasm Detection":
             st.warning("Please Enter A Text Of Atleast 50 Characters")
 
         else:
-            pred=predict(text,tokenizer,sarcasm_model)
+            pred=predictSarcasm(text)
             if pred==0:
                 st.write("The Text Is Not Sarcasm")
             else:
