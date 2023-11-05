@@ -1,26 +1,77 @@
-from tracemalloc import stop
 import streamlit as st
 import numpy as np
-import pandas as pd
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.models import load_model
 import re
-import string
-import nltk
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-from nltk.stem.porter import PorterStemmer
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestClassifier
+import os
 
-nltk.download('punkt')
-nltk.download('stopwords')
-sw=nltk.corpus.stopwords.words("english")
+def cleanText(text: str) -> str:
+    """
+    This function cleans the text by removing all the unnecessary characters.
+
+    Args:
+        text (str): The text to be cleaned.
+
+    Returns:
+        str: The cleaned text.
+    """
+    text = text.lower()
+    text = re.sub(r"[^a-zA-Z0-9]", " ", text)
+    text = re.sub(r"\s+", " ", text)
+    text = text.strip()
+    return text
+
+models_directory = "./models"
+models = os.listdir(models_directory)
+
+model_mapping = {
+    "spam": None,
+    "sentiment": None,
+    "stress": None,
+    "hate": None,
+    "sarcasm": None
+}
+
+for keyword, model_var in model_mapping.items():
+    for model_name in models:
+        if keyword in model_name.lower():
+            model_mapping[keyword] = load_model(os.path.join(models_directory, model_name))
+            break  
+
+spam_model = model_mapping["spam"]
+sentiment_model = model_mapping["sentiment"]
+stress_model = model_mapping["stress"]
+hate_model = model_mapping["hate"]
+sarcasm_model = model_mapping["sarcasm"]
+
+tokenizer = Tokenizer(num_words=10000, split=' ')
+
+def predict(
+        text : str,
+        tokenizer : object,
+        model : object,
+        ) -> int:
+    """
+    This function predicts the class of the text.
+
+    Args:
+        text (str): The text to be predicted.
+        tokenizer (object): The tokenizer object.
+        model (object): The model object.
+
+    Returns:
+        int: The predicted class.
+    """
+    text = cleanText(text)
+    input_seq = tokenizer.texts_to_sequences([text])
+    pad_seq = pad_sequences(input_seq, maxlen=100, padding='post')
+    pred = model.predict(pad_seq)
+    pred = np.argmax(pred)
+    return pred
 
 rad=st.sidebar.radio("Navigation",["Home","Spam or Ham Detection","Sentiment Analysis","Stress Detection","Hate and Offensive Content Detection","Sarcasm Detection"])
 
-#Home Page
 if rad=="Home":
     st.title("Complete Text Analysis App")
     st.image("Complete Text Analysis Home Page.jpg")
@@ -33,166 +84,89 @@ if rad=="Home":
     st.text("4. Hate and Offensive Content Detection")
     st.text("5. Sarcasm Detection")
 
-#function to clean and transform the user input which is in raw format
-def transform_text(text):
-    text=text.lower()
-    text=nltk.word_tokenize(text)
-    y=[]
-    for i in text:
-        if i.isalnum():
-            y.append(i)
-    text=y[:]
-    y.clear()
-    for i in text:
-        if i not in stopwords.words('english') and i not in string.punctuation:
-            y.append(i)
-    text=y[:]
-    y.clear()
-    ps=PorterStemmer()
-    for i in text:
-        y.append(ps.stem(i))
-    return " ".join(y)
-
-#Spam Detection Prediction
-tfidf1=TfidfVectorizer(stop_words=sw,max_features=20)
-def transform1(txt1):
-    txt2=tfidf1.fit_transform(txt1)
-    return txt2.toarray()
-
-df1=pd.read_csv("Spam Detection.csv")
-df1.columns=["Label","Text"]
-x=transform1(df1["Text"])
-y=df1["Label"]
-x_train1,x_test1,y_train1,y_test1=train_test_split(x,y,test_size=0.1,random_state=0)
-model1=LogisticRegression()
-model1.fit(x_train1,y_train1)
-
-#Spam Detection Analysis Page
 if rad=="Spam or Ham Detection":
     st.header("Detect Whether A Text Is Spam Or Ham??")
-    sent1=st.text_area("Enter The Text")
-    transformed_sent1=transform_text(sent1)
-    vector_sent1=tfidf1.transform([transformed_sent1])
-    prediction1=model1.predict(vector_sent1)[0]
 
+    text=st.text_area("Enter Text Here")
     if st.button("Predict"):
-        if prediction1=="spam":
-            st.warning("Spam Text!!")
-        elif prediction1=="ham":
-            st.success("Ham Text!!")
+        if text=="":
+            st.write("Please Enter Some Text")
+        elif len(text) < 50:
+            st.warning("Please Enter A Text Of Atleast 50 Characters")
 
-#Sentiment Analysis Prediction 
-tfidf2=TfidfVectorizer(stop_words=sw,max_features=20)
-def transform2(txt1):
-    txt2=tfidf2.fit_transform(txt1)
-    return txt2.toarray()
+        else:
+            pred=predict(text,tokenizer,spam_model)
+            if pred==1:
+                st.write("The Text Is Spam")
+            else:
+                st.write("The Text Is Ham")
 
-df2=pd.read_csv("Sentiment Analysis.csv")
-df2.columns=["Text","Label"]
-x=transform2(df2["Text"])
-y=df2["Label"]
-x_train2,x_test2,y_train2,y_test2=train_test_split(x,y,test_size=0.1,random_state=0)
-model2=LogisticRegression()
-model2.fit(x_train2,y_train2)
-
-#Sentiment Analysis Page
 if rad=="Sentiment Analysis":
-    st.header("Detect The Sentiment Of The Text!!")
-    sent2=st.text_area("Enter The Text")
-    transformed_sent2=transform_text(sent2)
-    vector_sent2=tfidf2.transform([transformed_sent2])
-    prediction2=model2.predict(vector_sent2)[0]
+    st.header("Detect The Sentiment Of A Text??")
 
+    text=st.text_area("Enter Text Here")
     if st.button("Predict"):
-        if prediction2==0:
-            st.warning("Negetive Text!!")
-        elif prediction2==1:
-            st.success("Positive Text!!")
+        if text=="":
+            st.write("Please Enter Some Text")
+        elif len(text) < 50:
+            st.warning("Please Enter A Text Of Atleast 50 Characters")
 
-#Stress Detection Prediction
-tfidf3=TfidfVectorizer(stop_words=sw,max_features=20)
-def transform3(txt1):
-    txt2=tfidf3.fit_transform(txt1)
-    return txt2.toarray()
+        else:
+            pred=predict(text,tokenizer,sentiment_model)
+            if pred==0:
+                st.write("The Text Is Negative")
+            else:
+                st.write("The Text Is Positive")
 
-df3=pd.read_csv("Stress Detection.csv")
-df3=df3.drop(["subreddit","post_id","sentence_range","syntax_fk_grade"],axis=1)
-df3.columns=["Text","Sentiment","Stress Level"]
-x=transform3(df3["Text"])
-y=df3["Stress Level"].to_numpy()
-x_train3,x_test3,y_train3,y_test3=train_test_split(x,y,test_size=0.1,random_state=0)
-model3=DecisionTreeRegressor(max_leaf_nodes=2000)
-model3.fit(x_train3,y_train3)
-
-#Stress Detection Page
 if rad=="Stress Detection":
-    st.header("Detect The Amount Of Stress In The Text!!")
-    sent3=st.text_area("Enter The Text")
-    transformed_sent3=transform_text(sent3)
-    vector_sent3=tfidf3.transform([transformed_sent3])
-    prediction3=model3.predict(vector_sent3)[0]
+    st.header("Detect Whether A Text Is Stressed Or Not??")
 
+    text=st.text_area("Enter Text Here")
     if st.button("Predict"):
-        if prediction3>=0:
-            st.warning("Stressful Text!!")
-        elif prediction3<0:
-            st.success("Not A Stressful Text!!")
+        if text=="":
+            st.write("Please Enter Some Text")
+        elif len(text) < 50:
+            st.warning("Please Enter A Text Of Atleast 50 Characters")
 
-#Hate & Offensive Content Prediction
-tfidf4=TfidfVectorizer(stop_words=sw,max_features=20)
-def transform4(txt1):
-    txt2=tfidf4.fit_transform(txt1)
-    return txt2.toarray()
+        else:
+            pred=predict(text,tokenizer,stress_model)
+            if pred==0:
+                st.write("The Text Is Not Stressed")
+            else:
+                st.write("The Text Is Stressed")
 
-df4=pd.read_csv("Hate Content Detection.csv")
-df4=df4.drop(["Unnamed: 0","count","neither"],axis=1)
-df4.columns=["Hate Level","Offensive Level","Class Level","Text"]
-x=transform4(df4["Text"])
-y=df4["Class Level"]
-x_train4,x_test4,y_train4,y_test4=train_test_split(x,y,test_size=0.1,random_state=0)
-model4=RandomForestClassifier()
-model4.fit(x_train4,y_train4)
-
-#Hate & Offensive Content Page
 if rad=="Hate and Offensive Content Detection":
-    st.header("Detect The Level Of Hate & Offensive Content In The Text!!")
-    sent4=st.text_area("Enter The Text")
-    transformed_sent4=transform_text(sent4)
-    vector_sent4=tfidf4.transform([transformed_sent4])
-    prediction4=model4.predict(vector_sent4)[0]
+    st.header("Detect Whether A Text Is Hate and Offensive Content Or Not??")
 
+    text=st.text_area("Enter Text Here")
     if st.button("Predict"):
-        if prediction4==0:
-            st.exception("Highly Offensive Text!!")
-        elif prediction4==1:
-            st.warning("Offensive Text!!")
-        elif prediction4==2:
-            st.success("Non Offensive Text!!")
+        if text=="":
+            st.write("Please Enter Some Text")
+        elif len(text) < 50:
+            st.warning("Please Enter A Text Of Atleast 50 Characters")
 
-#Sarcasm Detection Prediction
-tfidf5=TfidfVectorizer(stop_words=sw,max_features=20)
-def transform5(txt1):
-    txt2=tfidf5.fit_transform(txt1)
-    return txt2.toarray()
+        else:
+            pred=predict(text,tokenizer,hate_model)
+            if pred==0:
+                st.write("The Text Is Highly Offensive")
+            elif pred==1:
+                st.write("The Text Is Offensive")
+            else:
+                st.write("The Text Is Not Offensive")
 
-df5=pd.read_csv("Sarcasm Detection.csv")
-df5.columns=["Text","Label"]
-x=transform5(df5["Text"])
-y=df5["Label"]
-x_train5,x_test5,y_train5,y_test5=train_test_split(x,y,test_size=0.1,random_state=0)
-model5=LogisticRegression()
-model5.fit(x_train5,y_train5) 
-
-#Sarcasm Detection Page
 if rad=="Sarcasm Detection":
-    st.header("Detect Whether The Text Is Sarcastic Or Not!!")
-    sent5=st.text_area("Enter The Text")
-    transformed_sent5=transform_text(sent5)
-    vector_sent5=tfidf5.transform([transformed_sent5])
-    prediction5=model5.predict(vector_sent5)[0]
+    st.header("Detect Whether A Text Is Sarcasm Or Not??")
 
+    text=st.text_area("Enter Text Here")
     if st.button("Predict"):
-        if prediction5==1:
-            st.exception("Sarcastic Text!!")
-        elif prediction5==0:
-            st.success("Non Sarcastic Text!!")
+        if text=="":
+            st.write("Please Enter Some Text")
+        elif len(text) < 50:
+            st.warning("Please Enter A Text Of Atleast 50 Characters")
+
+        else:
+            pred=predict(text,tokenizer,sarcasm_model)
+            if pred==0:
+                st.write("The Text Is Not Sarcasm")
+            else:
+                st.write("The Text Is Sarcasm")
